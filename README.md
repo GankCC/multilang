@@ -1,65 +1,222 @@
-<p align="center"><a href="https://laravel.com" target="_blank"><img src="https://raw.githubusercontent.com/laravel/art/master/logo-lockup/5%20SVG/2%20CMYK/1%20Full%20Color/laravel-logolockup-cmyk-red.svg" width="400" alt="Laravel Logo"></a></p>
 
-<p align="center">
-<a href="https://github.com/laravel/framework/actions"><img src="https://github.com/laravel/framework/workflows/tests/badge.svg" alt="Build Status"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/dt/laravel/framework" alt="Total Downloads"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/v/laravel/framework" alt="Latest Stable Version"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/l/laravel/framework" alt="License"></a>
-</p>
 
-## About Laravel
+# Create multi-languages website with [Laravel](https://laravel.com/), [Vue](https://vuejs.org/) and [InertiaJS](https://inertiajs.com/)
 
-Laravel is a web application framework with expressive, elegant syntax. We believe development must be an enjoyable and creative experience to be truly fulfilling. Laravel takes the pain out of development by easing common tasks used in many web projects, such as:
+This simple example provides a guideline for creating a multi-languages website using Laravel, Vue and InertiaJS.
 
-- [Simple, fast routing engine](https://laravel.com/docs/routing).
-- [Powerful dependency injection container](https://laravel.com/docs/container).
-- Multiple back-ends for [session](https://laravel.com/docs/session) and [cache](https://laravel.com/docs/cache) storage.
-- Expressive, intuitive [database ORM](https://laravel.com/docs/eloquent).
-- Database agnostic [schema migrations](https://laravel.com/docs/migrations).
-- [Robust background job processing](https://laravel.com/docs/queues).
-- [Real-time event broadcasting](https://laravel.com/docs/broadcasting).
+## Let's see the demo
 
-Laravel is accessible, powerful, and provides tools required for large, robust applications.
+First of all, clone this repository to your workspace and install dependencies.
 
-## Learning Laravel
+```
+git clone https://github.com/GankCC/multilang.git
+cd multilang
+npm install
+composer install
+cp .env.example .env
+php artisan key:generate
+npm run dev
+```
 
-Laravel has the most extensive and thorough [documentation](https://laravel.com/docs) and video tutorial library of all modern web application frameworks, making it a breeze to get started with the framework.
+Open a new tab, go to the project directory and run belowed command to start a server.
+```
+cd multilang
+php artisan serve
+```
 
-You may also try the [Laravel Bootcamp](https://bootcamp.laravel.com), where you will be guided through building a modern Laravel application from scratch.
+## How it works?
+Let's begin with a home page. Home.vue represent the first page of the website containg only "Hello" message at the center. On the top, there is a Header component responsible for navigation and language changing links. 
 
-If you don't feel like reading, [Laracasts](https://laracasts.com) can help. Laracasts contains over 2000 video tutorials on a range of topics including Laravel, modern PHP, unit testing, and JavaScript. Boost your skills by digging into our comprehensive video library.
+Home.vue
+```vue
+<template>
+    <div>
+        <Header />
+        <div
+            class="flex items-center justify-center h-screen bg-slate-900 text-gray-50"
+        >
+            <h1 class="text-5xl">
+                {{ message[lang].hello }}
+            </h1>
+        </div>
+    </div>
+</template>
 
-## Laravel Sponsors
+<script setup>
+import Header from "@/Components/Header.vue";
+import { usePage } from "@inertiajs/vue3";
+import { computed } from "vue";
 
-We would like to extend our thanks to the following sponsors for funding Laravel development. If you are interested in becoming a sponsor, please visit the Laravel [Patreon page](https://patreon.com/taylorotwell).
+const lang = computed(() => usePage().props.lang);
+const message = {
+    en: {
+        hello: "Hello",
+    },
+    th: {
+        hello: "สวัสดี",
+    },
+};
+</script>
 
-### Premium Partners
+```
 
-- **[Vehikl](https://vehikl.com/)**
-- **[Tighten Co.](https://tighten.co)**
-- **[Kirschbaum Development Group](https://kirschbaumdevelopment.com)**
-- **[64 Robots](https://64robots.com)**
-- **[Cubet Techno Labs](https://cubettech.com)**
-- **[Cyber-Duck](https://cyber-duck.co.uk)**
-- **[Many](https://www.many.co.uk)**
-- **[Webdock, Fast VPS Hosting](https://www.webdock.io/en)**
-- **[DevSquad](https://devsquad.com)**
-- **[Curotec](https://www.curotec.com/services/technologies/laravel/)**
-- **[OP.GG](https://op.gg)**
-- **[WebReinvent](https://webreinvent.com/?utm_source=laravel&utm_medium=github&utm_campaign=patreon-sponsors)**
-- **[Lendio](https://lendio.com)**
+As you can see here, the message is stored in a variable that contains 2 languages. The message displayed at the center is determined by the "lang" props from the page. This "lang" prop is injected by HandleInertiaRequests, so that it can be accessed globally.
 
-## Contributing
+HandleInertiaRequests.php
 
-Thank you for considering contributing to the Laravel framework! The contribution guide can be found in the [Laravel documentation](https://laravel.com/docs/contributions).
+```php
+<?php
 
-## Code of Conduct
+namespace App\Http\Middleware;
 
-In order to ensure that the Laravel community is welcoming to all, please review and abide by the [Code of Conduct](https://laravel.com/docs/contributions#code-of-conduct).
+use Illuminate\Http\Request;
+use Inertia\Middleware;
+use Tightenco\Ziggy\Ziggy;
 
-## Security Vulnerabilities
+class HandleInertiaRequests extends Middleware
+{
+    /**
+     * The root template that is loaded on the first page visit.
+     *
+     * @var string
+     */
+    protected $rootView = 'app';
 
-If you discover a security vulnerability within Laravel, please send an e-mail to Taylor Otwell via [taylor@laravel.com](mailto:taylor@laravel.com). All security vulnerabilities will be promptly addressed.
+    /**
+     * Determine the current asset version.
+     */
+    public function version(Request $request): string|null
+    {
+        return parent::version($request);
+    }
+
+    /**
+     * Define the props that are shared by default.
+     *
+     * @return array<string, mixed>
+     */
+    public function share(Request $request): array
+    {
+        return array_merge(parent::share($request), [
+            'lang' => app()->getLocale(),
+        ]);
+    }
+}
+```
+In order to change the language, we have to create a route for handle the language.
+
+web.php
+```php
+<?php
+
+use App\Http\Controllers\ProfileController;
+use Illuminate\Foundation\Application;
+use Illuminate\Support\Facades\Route;
+use Inertia\Inertia;
+
+Route::get('/', function () {
+    return Inertia::render('Home');
+});
+
+// changing language
+Route::get('language/{locale}', function ($locale) {
+    app()->setLocale($locale);
+    session()->put('locale', $locale);
+
+    return redirect()->back();
+});
+```
+When user visit route, for example, "language/en", the locale session should be stored as "en". And the entire page should align with English language. However, we have to create additional middleware to set the locale for the app.
+
+Create Localization middleware.
+
+```
+php artisan make:middleware Localization
+```
+
+Edit handle function in app/Http/Middleware/Localization.php to be as followed.
+
+```php
+<?php
+
+namespace App\Http\Middleware;
+
+use Closure;
+use Illuminate\Http\Request;
+use Symfony\Component\HttpFoundation\Response;
+
+class Localization
+{
+    /**
+     * Handle an incoming request.
+     *
+     * @param  \Closure(\Illuminate\Http\Request): (\Symfony\Component\HttpFoundation\Response)  $next
+     */
+    public function handle(Request $request, Closure $next): Response
+    {
+        if (session()->has('locale')) {
+            app()->setLocale(session()->get('locale'));
+        }
+        return $next($request);
+    }
+}
+```
+
+Then, add this new middleware to Kernal.php inside the 'web' middleware group
+
+Inside Kernal.php
+```php
+'web' => [
+    \App\Http\Middleware\EncryptCookies::class,
+    \Illuminate\Cookie\Middleware\AddQueuedCookiesToResponse::class,
+    \Illuminate\Session\Middleware\StartSession::class,
+    \Illuminate\View\Middleware\ShareErrorsFromSession::class,
+    \App\Http\Middleware\VerifyCsrfToken::class,
+    \Illuminate\Routing\Middleware\SubstituteBindings::class,
+    \App\Http\Middleware\Localization::class,
+    \App\Http\Middleware\HandleInertiaRequests::class,
+    \Illuminate\Http\Middleware\AddLinkHeadersForPreloadedAssets::class,
+],
+```
+Please make sure that the Localization is placed above HandleInertiaRequests unless it will not working.
+
+Finally, we create the Header component that contain links to language changing.
+
+```vue
+<template>
+    <div class="flex justify-between w-full px-10 py-5 shadow-sm">
+        <div>
+            <h1>Company Logo</h1>
+        </div>
+        <ul class="flex gap-8">
+            <li v-for="item in menu" key="title">
+                <Link :href="item.url">{{ item[lang].title }}</Link>
+            </li>
+            <ul class="flex gap-1">
+                <li :class="{ underline: lang == 'en' }">
+                    <Link href="/language/en">EN</Link>
+                </li>
+                |
+                <li :class="{ underline: lang == 'th' }">
+                    <Link href="/language/th">TH</Link>
+                </li>
+            </ul>
+        </ul>
+    </div>
+</template>
+<script setup>
+import { Head, Link, usePage } from "@inertiajs/vue3";
+import { computed } from "vue";
+
+const menu = [
+    { url: "/", en: { title: "Home" }, th: { title: "หน้าแรก" } },
+    { url: "/about", en: { title: "About" }, th: { title: "เกี่ยวกับเรา" } },
+    { url: "/contact", en: { title: "Contact" }, th: { title: "ติดต่อเรา" } },
+];
+
+const lang = computed(() => usePage().props.lang);
+</script>
+```
 
 ## License
 
