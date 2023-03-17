@@ -9,8 +9,9 @@ Route::get('/', function () {
     return Inertia::render('Home');
 });
 
-// changin language
+// changing language
 Route::get('language/{locale}', function ($locale) {
+    app()->setLocale($locale);
     session()->put('locale', $locale);
 
     return redirect()->back();
